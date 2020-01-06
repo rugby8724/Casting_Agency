@@ -1,15 +1,19 @@
-from flask import Flask, request, _request_ctx_stack, abort
 import json
+from flask import request, _request_ctx_stack, abort
 from functools import wraps
 from jose import jwt
 from urllib.request import urlopen
 
 
-app = Flask(__name__)
-
 AUTH0_DOMAIN = 'jwudacity.auth0.com'
 ALGORITHMS = ['RS256']
 API_AUDIENCE = 'casting'
+
+# AuthError Exception
+'''
+AuthError Exception
+A standardized way to communicate auth failure modes
+'''
 
 
 class AuthError(Exception):
@@ -18,6 +22,7 @@ class AuthError(Exception):
         self.status_code = status_code
 
 
+# Auth Header
 def get_token_auth_header():
     """Obtains the Access Token from the Authorization Header
     """
@@ -49,6 +54,7 @@ def get_token_auth_header():
 
     token = parts[1]
     return token
+
 
 def check_permissions(permission, payload):
     if 'permissions' not in payload:
@@ -119,20 +125,19 @@ def verify_decode_jwt(token):
             }, 400)
 
 
-def requires_auth(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        token = get_token_auth_header()
-        try:
-            payload = verify_decode_jwt(token)
-        except:
-            abort(401)
-        return f(payload, *args, **kwargs)
+def requires_auth(permission=''):
 
-    return wrapper
+    def requires_auth_decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            try:
+                token = get_token_auth_header()
+                payload = verify_decode_jwt(token)
+                check_permissions(permission, payload)
+            except AuthError as err:
+                abort(401, err.error)
 
-@app.route('/headers')
-@requires_auth
-def headers(payload):
-    print(payload)
-    return 'Access Granted'
+            return f(payload, *args, **kwargs)
+
+        return wrapper
+    return

@@ -62,8 +62,8 @@ def create_app(test_config=None):
         })
 
     @app.route('/actors', methods=['GET'])
-    @requires_auth('get:actors')
-    def get_actors():
+    # @requires_auth('get:actors')
+    def get_actors(payload):
         '''
         Displays all actors
         Will abort if no actors are found
